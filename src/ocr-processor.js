@@ -268,118 +268,90 @@ function parseOCRResult(ocrData) {
 
 /**
  * Detect stable column boundaries from the first image's data
- * Uses a more sophisticated algorithm that analyzes gaps between words
+ * Uses right-edge analysis: columns end where words consistently end across all lines
  */
 function detectColumns(parsedData) {
     if (parsedData.length === 0) return { columns: ['Columna 1'], boundaries: null };
 
-    const sampleLines = parsedData.slice(0, 50); // Analyze more lines for better accuracy
+    const sampleLines = parsedData.slice(0, 50);
 
-    // Method 1: Analyze gaps between consecutive words in each line
-    // Collect all gap positions (the X position where gaps occur)
-    const gapPositions = [];
+    // Strategy: Find positions where words consistently END (right edge)
+    // These positions correspond to the vertical lines between columns
 
+    const binSize = 8;
+    const rightEdgeHistogram = {};
+
+    // For each line, collect the right edges of words (only count each bin once per line)
     for (const line of sampleLines) {
-        if (!line.words || line.words.length < 2) continue;
+        if (!line.words || line.words.length < 1) continue;
 
-        // Sort words by their left position
-        const sortedWords = [...line.words]
-            .filter(w => w.left !== undefined && w.right !== undefined)
-            .sort((a, b) => a.left - b.left);
-
-        // Find gaps between consecutive words
-        for (let i = 0; i < sortedWords.length - 1; i++) {
-            const currentWord = sortedWords[i];
-            const nextWord = sortedWords[i + 1];
-
-            // Calculate the gap between words
-            const gap = nextWord.left - currentWord.right;
-
-            // If gap is significant, this could be a column boundary
-            // Store the midpoint of the gap as a potential column divider
-            if (gap > 5) { // Minimum gap to consider
-                const gapMidpoint = currentWord.right + (gap / 2);
-                gapPositions.push({
-                    position: gapMidpoint,
-                    gap: gap
-                });
+        const usedBins = new Set();
+        for (const word of line.words) {
+            if (word.right === undefined) continue;
+            const bin = Math.floor(word.right / binSize) * binSize;
+            if (!usedBins.has(bin)) {
+                usedBins.add(bin);
+                if (!rightEdgeHistogram[bin]) {
+                    rightEdgeHistogram[bin] = 0;
+                }
+                rightEdgeHistogram[bin]++;
             }
         }
     }
 
-    if (gapPositions.length === 0) {
-        // Fallback: use word start positions
-        return detectColumnsByStartPositions(parsedData);
-    }
+    // Find bins where at least 40% of lines have a word ending there
+    const minLineCount = Math.max(3, Math.floor(sampleLines.length * 0.4));
 
-    // Create a histogram of gap positions (binned by 10px intervals)
-    const binSize = 10;
-    const histogram = {};
-
-    for (const gp of gapPositions) {
-        const bin = Math.floor(gp.position / binSize) * binSize;
-        if (!histogram[bin]) {
-            histogram[bin] = { count: 0, totalGap: 0, positions: [] };
-        }
-        histogram[bin].count++;
-        histogram[bin].totalGap += gp.gap;
-        histogram[bin].positions.push(gp.position);
-    }
-
-    // Find bins that appear frequently (at least 10% of analyzed lines)
-    const minCount = Math.max(2, Math.floor(sampleLines.length * 0.10));
-    const significantBins = Object.entries(histogram)
-        .filter(([, data]) => data.count >= minCount)
-        .map(([bin, data]) => ({
-            position: parseInt(bin) + binSize / 2,
-            count: data.count,
-            avgGap: data.totalGap / data.count
+    let columnDividers = Object.entries(rightEdgeHistogram)
+        .filter(([, count]) => count >= minLineCount)
+        .map(([bin, count]) => ({
+            // Use center of bin + small offset to account for spacing between columns
+            position: parseInt(bin) + binSize / 2 + 2,
+            count
         }))
         .sort((a, b) => a.position - b.position);
 
-    // Merge bins that are too close together (within 15px)
-    const mergedBins = [];
-    for (const bin of significantBins) {
-        if (mergedBins.length === 0) {
-            mergedBins.push(bin);
+    // Merge dividers that are too close (within 12px)
+    const mergedDividers = [];
+    for (const div of columnDividers) {
+        if (mergedDividers.length === 0) {
+            mergedDividers.push(div);
         } else {
-            const lastBin = mergedBins[mergedBins.length - 1];
-            if (bin.position - lastBin.position < 15) {
-                // Merge: keep the one with higher count, or average the positions
-                if (bin.count > lastBin.count) {
-                    mergedBins[mergedBins.length - 1] = bin;
+            const lastDiv = mergedDividers[mergedDividers.length - 1];
+            if (div.position - lastDiv.position < 12) {
+                // Keep the one with higher count
+                if (div.count > lastDiv.count) {
+                    mergedDividers[mergedDividers.length - 1] = div;
                 }
             } else {
-                mergedBins.push(bin);
+                mergedDividers.push(div);
             }
         }
     }
 
-    console.log(`  📐 Detected ${mergedBins.length + 1} columns from ${gapPositions.length} gap positions`);
+    console.log(`  📐 Detected ${mergedDividers.length + 1} columns from ${Object.keys(rightEdgeHistogram).length} edge positions`);
 
-    // Create boundaries from the merged bins
-    // Each bin represents a column divider, so we have N+1 columns for N dividers
+    // Create boundaries from the dividers
     const boundaries = [];
 
-    // First column: from 0 to first divider
-    if (mergedBins.length > 0) {
-        boundaries.push({ start: 0, end: mergedBins[0].position });
+    if (mergedDividers.length > 0) {
+        // First column: from 0 to first divider
+        boundaries.push({ start: 0, end: mergedDividers[0].position });
 
         // Middle columns
-        for (let i = 0; i < mergedBins.length - 1; i++) {
+        for (let i = 0; i < mergedDividers.length - 1; i++) {
             boundaries.push({
-                start: mergedBins[i].position,
-                end: mergedBins[i + 1].position
+                start: mergedDividers[i].position,
+                end: mergedDividers[i + 1].position
             });
         }
 
         // Last column: from last divider to infinity
         boundaries.push({
-            start: mergedBins[mergedBins.length - 1].position,
+            start: mergedDividers[mergedDividers.length - 1].position,
             end: Infinity
         });
     } else {
-        // No dividers found, single column
         boundaries.push({ start: 0, end: Infinity });
     }
 
@@ -390,12 +362,11 @@ function detectColumns(parsedData) {
     if (headerLine && headerLine.words) {
         for (let i = 0; i < boundaries.length; i++) {
             const boundary = boundaries[i];
+            // Use LEFT edge of word to determine which column it belongs to
             const wordsInColumn = headerLine.words
                 .filter(w => {
                     if (w.left === undefined) return false;
-                    // Word belongs to this column if its center falls within the boundary
-                    const wordCenter = w.left + ((w.right || w.left) - w.left) / 2;
-                    return wordCenter >= boundary.start && wordCenter < boundary.end;
+                    return w.left >= boundary.start && w.left < boundary.end;
                 })
                 .map(w => w.text)
                 .join(' ');
@@ -541,11 +512,10 @@ function mapDataToColumns(parsedData, columns, boundaries) {
             for (let j = 0; j < columns.length; j++) {
                 const boundary = boundaries[j];
                 if (boundary) {
-                    // Use word center for more accurate column assignment
+                    // Use LEFT edge of word to determine which column it belongs to
                     const wordsInColumn = sortedWords.filter(w => {
                         if (w.left === undefined) return false;
-                        const wordCenter = w.left + ((w.right || w.left) - w.left) / 2;
-                        return wordCenter >= boundary.start && wordCenter < boundary.end;
+                        return w.left >= boundary.start && w.left < boundary.end;
                     });
                     const rawValue = wordsInColumn.map(w => w.text).join(' ').trim();
                     // Apply post-processing to fix common OCR errors

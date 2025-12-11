@@ -1831,3 +1831,71 @@ body {
   transform: translateY(-1px);
   box-shadow: 0 4px 15px var(--primary-glow);
 }
+
+/* Quality Warning Banner */
+.quality-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  background: linear-gradient(135deg, hsla(38, 92%, 50%, 0.15) 0%, hsla(25, 95%, 45%, 0.1) 100%);
+  border: 1px solid hsla(38, 92%, 50%, 0.3);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  margin: var(--space-lg) 0;
+  animation: fadeInSlide 0.3s ease-out;
+}
+
+.quality-warning svg {
+  flex-shrink: 0;
+  color: var(--warning);
+  margin-top: 2px;
+}
+
+.quality-warning .warning-content {
+  flex: 1;
+}
+
+.quality-warning strong {
+  color: var(--warning);
+  font-size: var(--font-size-base);
+  display: block;
+  margin-bottom: var(--space-xs);
+}
+
+.quality-warning p {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.quality-warning.hidden {
+  display: none;
+}
+
+/* Severity levels */
+.quality-warning.warning-low {
+  background: linear-gradient(135deg, hsla(38, 92%, 50%, 0.1) 0%, hsla(38, 92%, 50%, 0.05) 100%);
+  border-color: hsla(38, 92%, 50%, 0.2);
+}
+
+.quality-warning.warning-high {
+  background: linear-gradient(135deg, hsla(0, 84%, 60%, 0.15) 0%, hsla(0, 84%, 50%, 0.1) 100%);
+  border-color: hsla(0, 84%, 60%, 0.3);
+}
+
+.quality-warning.warning-high svg,
+.quality-warning.warning-high strong {
+  color: var(--error);
+}
+
+@keyframes fadeInSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

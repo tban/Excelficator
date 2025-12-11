@@ -82,6 +82,10 @@ class Excelficator {
         this.reportFilteredRows = document.getElementById('reportFilteredRows');
         this.reportTotalRows = document.getElementById('reportTotalRows');
 
+        // Quality warning element
+        this.qualityWarning = document.getElementById('qualityWarning');
+        this.qualityWarningText = document.getElementById('qualityWarningText');
+
         // Store last stats for report
         this.lastStats = null;
         this.lastTotalRows = 0;
@@ -882,9 +886,13 @@ class Excelficator {
             if (result.stats) {
                 this.resultAccuracy.textContent = result.stats.accuracyPercent + '%';
                 this.resultErrors.textContent = result.stats.errorPercent + '%';
+
+                // Show quality warning based on accuracy
+                this.updateQualityWarning(result.stats.accuracyPercent);
             } else {
                 this.resultAccuracy.textContent = 'N/A';
                 this.resultErrors.textContent = 'N/A';
+                this.qualityWarning.classList.add('hidden');
             }
 
             this.detectedColumns.innerHTML = result.columns.map(col =>
@@ -990,6 +998,35 @@ class Excelficator {
 
     closeErrorReport() {
         this.errorReportModal.classList.add('hidden');
+    }
+
+    // ==========================================
+    // Quality Warning Methods
+    // ==========================================
+
+    updateQualityWarning(accuracyPercent) {
+        console.log('updateQualityWarning called with:', accuracyPercent);
+
+        // Remove all warning classes
+        this.qualityWarning.classList.remove('warning-low', 'warning-high', 'hidden');
+
+        if (accuracyPercent >= 85) {
+            // Good quality - hide warning
+            console.log('Quality OK, hiding warning');
+            this.qualityWarning.classList.add('hidden');
+        } else if (accuracyPercent >= 70) {
+            // Moderate quality - show yellow warning
+            console.log('Moderate quality, showing yellow warning');
+            this.qualityWarning.classList.add('warning-low');
+            this.qualityWarningText.textContent =
+                `La precisión del OCR es del ${accuracyPercent}%. Algunos datos podrían contener errores. Revisa los resultados antes de usarlos.`;
+        } else {
+            // Low quality - show red warning
+            console.log('Low quality, showing red warning');
+            this.qualityWarning.classList.add('warning-high');
+            this.qualityWarningText.textContent =
+                `La precisión del OCR es muy baja (${accuracyPercent}%). Los resultados probablemente contienen múltiples errores. Se recomienda usar imágenes de mayor calidad o resolución.`;
+        }
     }
 }
 
