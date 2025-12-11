@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Excelficator - Convierte imágenes a hojas de cálculo Excel usando OCR">
+  <title>Excelficator | Imágenes a Excel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <div class="app-container">
+    <!-- Background Effects -->
+    <div class="bg-gradient"></div>
+    <div class="bg-dots"></div>
+
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="40" height="40" rx="10" fill="url(#logo-gradient)" />
+            <path
+              d="M10 12h8v4h-8v-4zM22 12h8v4h-8v-4zM10 18h8v4h-8v-4zM22 18h8v4h-8v-4zM10 24h8v4h-8v-4zM22 24h8v4h-8v-4z"
+              fill="white" fill-opacity="0.9" />
+            <defs>
+              <linearGradient id="logo-gradient" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#22C55E" />
+                <stop offset="1" stop-color="#16A34A" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <h1>Excelficator</h1>
+      </div>
+      <p class="tagline">Transforma imágenes en hojas de cálculo by <a href="https://twitter.com/TbanR" target="_blank"
+          rel="noopener noreferrer">@TbanR</a></p>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Drop Zone -->
+      <div id="dropZone" class="drop-zone">
+        <div class="drop-zone-content">
+          <div class="drop-icon">
+            <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="40" cy="40" r="38" stroke="currentColor" stroke-width="2" stroke-dasharray="8 4"
+                opacity="0.3" />
+              <path d="M40 20v28M26 34l14-14 14 14" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                stroke-linejoin="round" />
+              <path d="M20 52h40c2.2 0 4 1.8 4 4v4c0 2.2-1.8 4-4 4H20c-2.2 0-4-1.8-4-4v-4c0-2.2 1.8-4 4-4z"
+                fill="currentColor" opacity="0.2" />
+            </svg>
+          </div>
+          <h2>Arrastra tus imágenes aquí</h2>
+          <p>o haz clic para seleccionar archivos</p>
+          <div class="supported-formats">
+            <span>JPG</span>
+            <span>PNG</span>
+            <span>GIF</span>
+            <span>BMP</span>
+            <span>WebP</span>
+            <span>TIFF</span>
+          </div>
+        </div>
+        <input type="file" id="fileInput" multiple accept="image/*" hidden>
+      </div>
+
+      <!-- File Preview -->
+      <div id="filePreview" class="file-preview hidden">
+        <div class="file-preview-header">
+          <h3><span id="fileCount">0</span> archivo(s) seleccionado(s)</h3>
+          <button id="clearFiles" class="btn-clear">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+            Limpiar
+          </button>
+        </div>
+        <div id="fileList" class="file-list"></div>
+        <div class="file-note">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 16v-4M12 8h.01" />
+          </svg>
+          <span>El primer archivo determina la estructura de columnas del Excel</span>
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <button id="processBtn" class="process-btn hidden" disabled>
+        <span class="btn-content">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+          </svg>
+          <span>Procesar y Convertir a Excel</span>
+        </span>
+        <span class="btn-loading hidden">
+          <div class="spinner"></div>
+          <span>Procesando...</span>
+        </span>
+      </button>
+
+      <!-- Progress Section -->
+      <div id="progressSection" class="progress-section hidden">
+        <div class="progress-header">
+          <span id="progressText">Iniciando procesamiento...</span>
+          <span id="progressPercent">0%</span>
+        </div>
+        <div class="progress-bar">
+          <div id="progressFill" class="progress-fill"></div>
+        </div>
+      </div>
+
+      <!-- Results Section -->
+      <div id="resultsSection" class="results-section hidden">
+        <div class="results-card">
+          <div class="results-icon success">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+              <path d="M22 4L12 14.01l-3-3" />
+            </svg>
+          </div>
+          <h3>¡Conversión Exitosa!</h3>
+          <div class="results-stats">
+            <div class="stat">
+              <span class="stat-value" id="resultColumns">0</span>
+              <span class="stat-label">Columnas detectadas</span>
+            </div>
+            <div class="stat">
+              <span class="stat-value" id="resultRows">0</span>
+              <span class="stat-label">Filas extraídas</span>
+            </div>
+            <div class="stat stat-success">
+              <span class="stat-value" id="resultAccuracy">0%</span>
+              <span class="stat-label">Precisión OCR</span>
+            </div>
+            <div class="stat stat-warning stat-with-action">
+              <span class="stat-value" id="resultErrors">0%</span>
+              <span class="stat-label">Posibles errores</span>
+              <button id="showErrorReportBtn" class="error-report-btn" title="Ver informe de errores">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 16v-4M12 8h.01" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="detected-columns" id="detectedColumns"></div>
+          <div class="results-actions">
+            <a id="downloadBtn" href="#" class="download-btn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                <polyline points="7,10 12,15 17,10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Descargar Excel
+            </a>
+            <button id="resetBtn" class="reset-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
+              </svg>
+              Procesar más imágenes
+            </button>
+            <button id="clearListBtn" class="clear-list-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3,6 5,6 21,6" />
+                <path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2v2" />
+              </svg>
+              Limpiar y empezar de nuevo
+            </button>
+          </div>
+        </div>
+
+        <!-- Data Preview -->
+        <div class="preview-section" id="previewSection">
+          <h4>Vista previa de datos</h4>
+          <div class="table-wrapper">
+            <table id="previewTable"></table>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>Desarrollado por <a href="https://twitter.com/TbanR" target="_blank" rel="noopener noreferrer">@TbanR</a>
+        usando Tesseract.js OCR</p>
+    </footer>
+
+    <!-- Image Crop Modal -->
+    <div id="cropModal" class="crop-modal hidden">
+      <div class="crop-modal-overlay"></div>
+      <div class="crop-modal-content">
+        <div class="crop-modal-header">
+          <h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 2v14a2 2 0 002 2h14" />
+              <path d="M18 22V8a2 2 0 00-2-2H2" />
+            </svg>
+            Recortar Imagen
+          </h3>
+          <button id="closeCropModal" class="crop-close-btn">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div class="crop-modal-body">
+          <div class="crop-instructions">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 16v-4M12 8h.01" />
+            </svg>
+            Haz clic y arrastra para seleccionar el área a conservar
+          </div>
+          <div class="crop-canvas-container">
+            <div class="crop-canvas-wrapper">
+              <canvas id="cropCanvas"></canvas>
+              <div id="cropSelection" class="crop-selection hidden">
+                <div class="handle handle-nw"></div>
+                <div class="handle handle-ne"></div>
+                <div class="handle handle-sw"></div>
+                <div class="handle handle-se"></div>
+                <div class="handle handle-n"></div>
+                <div class="handle handle-s"></div>
+                <div class="handle handle-w"></div>
+                <div class="handle handle-e"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="crop-modal-footer">
+          <button id="resetCrop" class="crop-btn-secondary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+            </svg>
+            Reiniciar
+          </button>
+          <div class="crop-btn-group">
+            <button id="cancelCrop" class="crop-btn-secondary">Cancelar</button>
+            <button id="applyCrop" class="crop-btn-primary" disabled>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20,6 9,17 4,12" />
+              </svg>
+              Aplicar Recorte
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter Configuration Modal -->
+    <div id="filterModal" class="filter-modal hidden">
+      <div class="filter-modal-overlay"></div>
+      <div class="filter-modal-content">
+        <div class="filter-modal-header">
+          <h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="22,3 2,3 10,12.46 10,19 14,21 14,12.46" />
+            </svg>
+            Configurar Filtros
+          </h3>
+          <button id="closeFilterModal" class="filter-close-btn">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div class="filter-modal-body">
+          <div class="filter-info">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 16v-4M12 8h.01" />
+            </svg>
+            <span>Configura los filtros antes de procesar. Las filas que contengan el texto especificado serán
+              omitidas.</span>
+          </div>
+
+          <div class="filter-section">
+            <h4>📊 Columnas detectadas</h4>
+            <p class="filter-description">Desmarca las columnas que no quieres incluir en el Excel final</p>
+            <div id="columnCheckboxes" class="column-checkboxes"></div>
+          </div>
+
+          <div class="filter-section">
+            <h4>🚫 Omitir filas que contengan</h4>
+            <p class="filter-description">Añade reglas para omitir filas que contengan cierto texto</p>
+            <div id="omitRules" class="omit-rules"></div>
+            <button id="addOmitRule" class="add-rule-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Añadir regla de omisión
+            </button>
+          </div>
+
+          <div class="filter-section">
+            <h4>👀 Vista previa de datos</h4>
+            <div class="filter-preview-wrapper">
+              <table id="filterPreviewTable" class="filter-preview-table"></table>
+            </div>
+          </div>
+        </div>
+        <div class="filter-modal-footer">
+          <div class="filter-stats">
+            <span id="filterImageCount">0 imágenes</span>
+          </div>
+          <div class="filter-btn-group">
+            <button id="cancelFilter" class="filter-btn-secondary">Cancelar</button>
+            <button id="applyFilter" class="filter-btn-primary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+              </svg>
+              Procesar con filtros
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Report Modal -->
+  <div id="errorReportModal" class="error-report-modal hidden">
+    <div class="error-report-overlay"></div>
+    <div class="error-report-content">
+      <div class="error-report-header">
+        <h3>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 16v-4M12 8h.01" />
+          </svg>
+          Informe de Calidad OCR
+        </h3>
+        <button id="closeErrorReport" class="error-report-close-btn">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="error-report-body">
+        <div class="report-summary">
+          <div class="report-stat report-stat-success">
+            <span class="report-stat-value" id="reportAccuracy">0%</span>
+            <span class="report-stat-label">Precisión del OCR</span>
+          </div>
+          <div class="report-stat report-stat-warning">
+            <span class="report-stat-value" id="reportErrors">0%</span>
+            <span class="report-stat-label">Posibles errores</span>
+          </div>
+        </div>
+
+        <div class="report-details">
+          <h4>📊 Detalles del procesamiento</h4>
+          <div class="report-info-grid">
+            <div class="report-info-item">
+              <span class="report-info-label">Imágenes procesadas:</span>
+              <span class="report-info-value" id="reportImagesProcessed">0</span>
+            </div>
+            <div class="report-info-item">
+              <span class="report-info-label">Líneas analizadas:</span>
+              <span class="report-info-value" id="reportLinesProcessed">0</span>
+            </div>
+            <div class="report-info-item">
+              <span class="report-info-label">Filas filtradas:</span>
+              <span class="report-info-value" id="reportFilteredRows">0</span>
+            </div>
+            <div class="report-info-item">
+              <span class="report-info-label">Filas extraídas:</span>
+              <span class="report-info-value" id="reportTotalRows">0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="report-explanation">
+          <h4>💡 ¿Qué significa esto?</h4>
+          <div class="explanation-content">
+            <p><strong>Precisión del OCR:</strong> Indica el nivel de confianza del motor de reconocimiento de texto.
+              Valores superiores al 85% generalmente indican buena calidad.</p>
+            <p><strong>Posibles errores:</strong> Porcentaje de texto que podría contener errores. Esto puede ocurrir
+              cuando:</p>
+            <ul>
+              <li>La imagen tiene baja resolución o está borrosa</li>
+              <li>El texto está en un ángulo o distorsionado</li>
+              <li>Hay manchas, marcas o ruido en la imagen</li>
+              <li>La tipografía es poco común o decorativa</li>
+            </ul>
+            <p class="tip">💡 <strong>Consejo:</strong> Revisa las filas del Excel generado. Si detectas errores,
+              intenta con imágenes de mayor resolución o recórtalas para enfocarte en el área de datos.</p>
+          </div>
+        </div>
+      </div>
+      <div class="error-report-footer">
+        <button id="closeErrorReportBtn" class="error-report-close-action">Entendido</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
