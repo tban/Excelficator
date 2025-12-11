@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Uploads and generated files
+uploads/
+*.xlsx
+
+# Tesseract trained data (can be downloaded)
+*.traineddata
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
